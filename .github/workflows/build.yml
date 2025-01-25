@@ -26,16 +26,11 @@ jobs:
       fail-fast: false
       matrix:
         arch:
-          - aarch64
+          - arm64
         version:
           - 40
         flavor:
           - base
-          - base-nvidia
-          - silverblue
-          - silverblue-nvidia
-          - kinoite
-          - kinoite-nvidia
 
     steps:
       # Checkout push-to-registry action GitHub repository
