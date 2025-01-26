@@ -1,4 +1,4 @@
-FROM registry.fedoraproject.org/fedora:40 as builder
+FROM --platform=linux/arm64 registry.fedoraproject.org/fedora:42 as builder
 RUN dnf install -y rpm-build git dnf-plugins-core
 WORKDIR /usr/src/rootfiles
 RUN git clone https://src.fedoraproject.org/rpms/rootfiles.git .
@@ -14,7 +14,7 @@ RUN rpmbuild -bb rootfiles.spec \
     --define "_rpmdir `pwd`"
 
 
-FROM quay.io/fedora/fedora-bootc:40
+FROM --platform=linux/arm64 quay.io/fedora/fedora-bootc:42
 WORKDIR /tmp
 COPY --from=builder /usr/src/rootfiles/noarch/rootfiles-*.rpm .
 RUN dnf -y install rootfiles-*.rpm
