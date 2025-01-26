@@ -25,13 +25,18 @@ RUN dnf -y install git \
                    fish \
                    podman \
                    ruby \
-                   starship \
                    fedora-iot-config \
                    fedora-release-iot
 
 # Set fish as the default shell for the container
 RUN echo "/usr/bin/fish" >> /etc/shells && \
     chsh -s /usr/bin/fish
+
+# Fix /root if it's a symlink or invalid
+RUN rm -rf /root && mkdir -p /root && chmod 755 /root
+
+# Remove dangling symlink and recreate /home
+RUN rm -f /home && mkdir -p /home && chmod 755 /home
 
 # Install Linuxbrew
 RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ZhongRuoyu/homebrew-aarch64-linux/HEAD/install.sh)"
