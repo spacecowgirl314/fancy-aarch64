@@ -1,50 +1,40 @@
-# Start with the Fedora IoT base image
-FROM registry.fedoraproject.org/fedora-iot:latest
+FROM registry.fedoraproject.org/fedora:40 as builder
+RUN dnf install -y rpm-build git dnf-plugins-core
+WORKDIR /usr/src/rootfiles
+RUN git clone https://src.fedoraproject.org/rpms/rootfiles.git .
+RUN git fetch origin +refs/pull/*:refs/remotes/origin/pr/*
+RUN git checkout origin/pr/5/head
+RUN dnf builddep -y rootfiles.spec
+RUN rpmbuild -bb rootfiles.spec \
+    --define "_topdir `pwd`" \
+    --define "_sourcedir `pwd`" \
+    --define "_specdir `pwd`" \
+    --define "_builddir `pwd`" \
+    --define "_srcrpmdir `pwd`" \
+    --define "_rpmdir `pwd`"
 
-# Set metadata for the image
-LABEL maintainer="your-email@example.com" \
-      description="A Docker image based on Fedora IoT for IoT projects."
 
-# Update the package repository and install basic tools (optional)
-# RUN dnf -y update && \
-#     dnf -y install \
-#     bash \
-#     nano \
-#     curl \
-#     fish \
-#     git && \
-#     dnf clean all
-
-RUN rpm-ostree install \
-    bash \
-    nano \
-    curl \
-    fish \
-    git
-
-# rpm-ostree \
+FROM quay.io/fedora/fedora-bootc:40
+WORKDIR /tmp
+COPY --from=builder /usr/src/rootfiles/noarch/rootfiles-*.rpm .
+RUN dnf -y install rootfiles-*.rpm
+RUN dnf -y install git \
+                   bash \
+                   nano \
+                   curl \
+                   fish \
+                   podman \
+                   ruby \
+                   starship \
+                   fedora-iot-config \
+                   fedora-release-iot
 
 # Set fish as the default shell for the container
 RUN echo "/usr/bin/fish" >> /etc/shells && \
     chsh -s /usr/bin/fish
 
-SHELL ["/usr/bin/fish", "-c"]
-
 # Install Linuxbrew
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ZhongRuoyu/homebrew-aarch64-linux/HEAD/install.sh)"
 
 # Add Homebrew to PATH
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
-
-# Set the working directory inside the container
-WORKDIR /app
-
-# Copy your application or configuration files into the container (optional)
-# Uncomment and modify the line below to suit your project
-# COPY ./my-app /app
-
-# Set environment variables (optional)
-ENV MY_ENV_VAR=example_value
-
-# Define the default command to run in the container
-CMD ["/usr/bin/fish"]
